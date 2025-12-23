@@ -6,6 +6,7 @@ import {
   id = "<YOUR_RESOURCE_ID"
   to = <HCL_ARG>.<YOUR_ARG_NAME>
 }
+*/
 #vpc
 import {
     id = "vpc-07e3f8c9c0e710f43"
@@ -56,19 +57,20 @@ import {
 
 #iam policy
 import {
-  id = "arn:aws:iam::857565654393:policy/ecr-ec2-policy"
+  id = "arn:aws:iam::${var.account_id}:policy/ecr-ec2-policy"
   to = aws_iam_policy.ecr-ec2-policy 
 }
 
 #Github OIDC Provider
 import {
-  id = "arn:aws:iam::857565654393:oidc-provider/token.actions.githubusercontent.com"
+  id = "arn:aws:iam::${var.account_id}:oidc-provider/token.actions.githubusercontent.com"
   to = aws_iam_openid_connect_provider.github-oidc-provider
 }
 
+
 #policy attachment
 import {
-  id = "ECR-EC2-Image-Read/arn:aws:iam::857565654393:policy/ecr-ec2-policy"
+  id = "ECR-EC2-Image-Read/arn:aws:iam::${var.account_id}:policy/ecr-ec2-policy"
   to = aws_iam_role_policy_attachment.ecr-ec2-policy-attachment-custom
 }
 
@@ -89,6 +91,6 @@ import {
   to = aws_ecr_repository.flaskapp-ecr-repo
 }
 
-*/
+
 
 
