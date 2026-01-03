@@ -3,4 +3,3 @@
 *.tfvars
 *.tfstate
 *.hcl
-variables.tf
