@@ -18,7 +18,3 @@ variable "subnet_configuration" {
     description = "Dynamic Subnet Configuration"
 }
 
-variable "vpc_id" {
-  type = string
-  description = "VPC Id for my module"
-}

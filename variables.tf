@@ -15,6 +15,28 @@ variable "subnet_configuration" {
   }))
   description = "Subnet configuration for my VPC"
 }
+
+variable "iam_user_arns" {
+  type = list(object({
+    userarn = string
+    username = string
+    groups = list(string) 
+  }))
+  description = "ARN for the users to access cluster through"
+ 
+}
+
+
+variable "owners" {
+  type = list(string)
+  description = "Owners of the AMI Ids"
+}
+
+
+
+
+
+
 /*
 variable "security_groups" {
   description = "Map of security groups to create"

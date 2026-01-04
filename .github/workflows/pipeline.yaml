@@ -1,0 +1,47 @@
+'''
+name: Github Actions Pipeline for Testing, Validating and provision the infrastructure in AWS
+
+on: 
+
+env: secrete key, access key, TF_LOG = info
+
+persmissions: 
+    issues: write
+
+jobs: 
+    terraform-plan:
+        name: "Terraform Plan"
+        runs-on: ubunt
+        outputs:
+            tf-workpspa: ${{  }}
+
+        steps:
+            - name: checkout
+            - name: setup Terraform
+            - name: Setup TFLint
+            - name: Init TFLint
+            - name: Run TFLint
+            - name: Run Trivy vulnerability scanner in IaC mode
+            - name: Terraform init
+            - name: Terraform format
+            - name: validate
+            - name: setup the tfvars from checking the branch name like eks-setup = prod.tfvars
+            - name: select terraform workspace -- not applicable in this case
+            - name: Terraform Plan
+            - name: check if terraform plan failed
+            if: steps.plan.outcome == 'failure'
+
+            - name upload artifact
+    terraform-apply:
+        name: 
+        needs: 
+        if github.event_name == push 
+        runs-on:
+        steps:
+            - name: checkout
+            - name: Setup Terraform
+            - name: Terraform init
+            - name: Download artifact --upload it first in plan job
+            - name: Terraform Apply
+
+'''
