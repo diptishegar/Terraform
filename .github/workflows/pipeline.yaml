@@ -47,7 +47,7 @@ jobs:
       - name: Create prod.tfvars file
         shell: bash
         run: |
-           echo"${{ secrets.PROD_TF_VARS_SECRET }}" > prod.tfvars
+           printf "%s" "${{ secrets.PROD_TF_VARS_SECRET }}" > prod.tfvars
 
       - run: terraform init -input=false
 
