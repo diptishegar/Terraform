@@ -11,7 +11,6 @@ env:
   AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
   AWS_DEFAULT_REGION: ap-south-1
   TF_LOG: info
-  TF_WORKSPACE: prod
 
 permissions:
   issues: write
@@ -52,7 +51,21 @@ jobs:
       - run: terraform init -input=false
 
       - run: |
-          terraform workspace select prod
+            if [ "${{ github.event_name }}" = "pull_request" ]; then
+            BRANCH_NAME="${{ github.head_ref }}"
+            else
+            BRANCH_NAME="${{ github.ref_name }}"
+            fi
+
+            echo "Branch detected: $BRANCH_NAME"
+
+            if [ "$BRANCH_NAME" = "eks-setup" ]; then
+            WORKSPACE="prod"
+            else
+            WORKSPACE="default"
+            fi
+
+            terraform workspace select "$WORKSPACE" || terraform workspace new "$WORKSPACE"
 
       - run: terraform fmt -check
       - run: terraform validate
