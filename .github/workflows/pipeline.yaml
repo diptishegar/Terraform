@@ -37,6 +37,12 @@ jobs:
         with:
           scan-type: config
           severity: HIGH,CRITICAL
+      - name: AWS configure the credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+            aws-access-key-id: ${{ env.AWS_ACCESS_KEY_ID }}
+            aws-secret-access-key: ${{ env.AWS_SECRET_ACCESS_KEY }}
+            aws-region: ${{ env.AWS_DEFAULT_REGION }}
 
       - name: Create prod.tfvars file
         run: echo"${{ secrets.PROD_TF_VARS_SECRETE }}" > prod.tfvars
