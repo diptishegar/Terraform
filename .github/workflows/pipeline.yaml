@@ -45,7 +45,9 @@ jobs:
             aws-region: ${{ env.AWS_DEFAULT_REGION }}
 
       - name: Create prod.tfvars file
-        run: echo"${{ secrets.PROD_TF_VARS_SECRET }}" > prod.tfvars
+        shell: bash
+        run: |
+           echo"${{ secrets.PROD_TF_VARS_SECRET }}" > prod.tfvars
 
       - run: terraform init -input=false
 
