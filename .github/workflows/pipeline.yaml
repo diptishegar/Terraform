@@ -72,12 +72,17 @@ jobs:
 
                 terraform workspace select "$WORKSPACE" || terraform workspace new "$WORKSPACE"
 
-        - run: terraform fmt -check
-        - run: terraform validate
+        - name: Check files for fomatting & format the files
+          run: terraform fmt -recursive
 
-        - run: terraform plan -var-file="prod.tfvars" -out=tfplan
+        - name: Validate the files for syntax
+          run: terraform validate
 
-        - uses: actions/upload-artifact@v4
+        - name: Terraform plan
+          run: terraform plan -var-file="prod.tfvars" -out=tfplan
+
+        - name: Upload the artifact to Github workspace
+          uses: actions/upload-artifact@v4
           with:
             name: tfplan
             path: tfplan
