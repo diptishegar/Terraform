@@ -50,10 +50,48 @@ module "aws_eks_cluster" {
   eks_subnet_ids = [module.rapidconnect_vpc.subnet_ids["private1"], module.rapidconnect_vpc.subnet_ids["private2"]]
   eks_version_id = "1.30"
   node_group_name = "rapiconn-node-grp"
+  security_groups = [module.security_group_bastion_eks_nodes.security_group_id]
   users_arns = var.iam_user_arns
   owners = var.owners
+
+  depends_on = [ module.rapidconnect_vpc, module.security_group_bastion_eks_nodes ]
 }
 
+module "security_group_bastion_host" {
+  source = "./modules/security/security_group"
+  name = "connect the public subnet to private via a bastion host"
+  vpc_id = module.rapidconnect_vpc.vpc_id
+
+  ingress_rules = var.security_ingress
+}
+
+module "security_group_bastion_eks_nodes" {
+  source = "./modules/security/security_group"
+  name = "connect the public subnet to private via a bastion host"
+  vpc_id = module.rapidconnect_vpc.vpc_id
+  ingress_sg_rules = [{
+  from_port = 443
+  to_port = 443
+  protocol = "-1"
+  source_security_group_id = module.security_group_bastion_host.security_group_id
+}, {
+from_port = 10250
+  to_port = 10250
+  protocol = "-1"
+  source_security_group_id = module.security_group_bastion_host.security_group_id
+}
+]
+
+}
+
+#My Bastion Host
+module "bastion-host" {
+  source = "./modules/compute/ec2"
+
+  key_name = "ap-south-1_sshkey"
+  subnet_id = module.rapidconnect_vpc.subnet_ids["public1"]
+  security_groups = [module.security_group_bastion_host.security_group_id]
+}
 /*
 #My ECR Repository
 data "aws_ecr_repository" "aws_ecr_repo" {

@@ -23,6 +23,10 @@ output "oidc_provider_arn" {
   value       = aws_iam_openid_connect_provider.eks.arn
 }
 
+output "eks_cluster" {
+  value = aws_eks_cluster.this.vpc_config[0].cluster_security_group_id
+}
+
 output "oidc_issuer_url" {
   description = "OIDC issuer URL"
   value       = aws_eks_cluster.this.identity[0].oidc[0].issuer

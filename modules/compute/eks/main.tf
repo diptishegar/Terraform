@@ -90,6 +90,7 @@ resource "aws_eks_cluster" "this" {
     role_arn = aws_iam_role.eks_cluster_role.arn
     vpc_config {
       subnet_ids = var.eks_subnet_ids
+      security_group_ids = var.security_groups
       endpoint_public_access = false
       endpoint_private_access = true
     }
@@ -154,9 +155,10 @@ resource "aws_kms_key" "eks_secrets" {
 }
 
 resource "aws_launch_template" "this" {
-  name_prefix   = "${var.cluster_name}-lt-"
+  name_prefix   = "${var.cluster_name}-lt"
   image_id      = var.node_group_ami
   instance_type = "t2.micro"
+  vpc_security_group_ids = aws_eks_cluster.this.vpc_config[0].security_group_ids
 
   iam_instance_profile {
     name = aws_iam_instance_profile.this.name
@@ -180,6 +182,8 @@ resource "aws_eks_node_group" "this" {
 
     subnet_ids = var.eks_subnet_ids
     instance_types = var.instance_types
+
+    
 
     scaling_config {
     desired_size = var.scaling_config.desired_size
@@ -247,12 +251,6 @@ resource "aws_autoscaling_group" "this" {
     version = "$Latest"
   }
 
-  tag {
-    key                 = "Name"
-    value               = "${var.cluster_name}-worker"
-    propagate_at_launch = true
-  }
-
   # REQUIRED for EKS + autoscaler later
   tag {
     key                 = "kubernetes.io/cluster/${var.cluster_name}"
@@ -261,5 +259,3 @@ resource "aws_autoscaling_group" "this" {
   }
 }
 
-
-#verify everything with kubectl get nodes

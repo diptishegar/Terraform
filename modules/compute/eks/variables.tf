@@ -62,6 +62,10 @@ variable "node_group_ami" {
   default = "ami-02b8269d5e85954ef"
 }
 
+variable "security_groups" {
+  type = set(string)
+}
+
 variable "users_arns" {
   type = list(object({
     userarn = string
