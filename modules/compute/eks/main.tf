@@ -51,18 +51,27 @@ resource "aws_iam_role_policy_attachment" "eks_node_AmazonEKSWorkerNodePolicy" {
 #IAM IRSA role for ASG
 data "aws_iam_policy_document" "cluster_autoscaler_policy" {
   statement {
+    effect = "Allow"
+
     actions = [
       "autoscaling:DescribeAutoScalingGroups",
       "autoscaling:DescribeAutoScalingInstances",
       "autoscaling:DescribeLaunchConfigurations",
       "autoscaling:DescribeTags",
       "autoscaling:SetDesiredCapacity",
-      "autoscaling:TerminateInstanceInAutoScalingGroup",
-      "ec2:DescribeLaunchTemplateVersions"
+      "autoscaling:TerminateInstanceInAutoScalingGroup"
     ]
+
     resources = ["*"]
+
+    condition {
+      test     = "StringEquals"
+      variable = "autoscaling:ResourceTag/kubernetes.io/cluster/${var.cluster_name}"
+      values   = ["owned"]
+    }
   }
 }
+
 
 resource "aws_iam_policy" "cluster_autoscaler" {
   name        = "EKSClusterAutoscalerPolicy"
@@ -81,11 +90,19 @@ resource "aws_eks_cluster" "this" {
     role_arn = aws_iam_role.eks_cluster_role.arn
     vpc_config {
       subnet_ids = var.eks_subnet_ids
-      endpoint_public_access = true
+      endpoint_public_access = false
       endpoint_private_access = true
     }
 
-    depends_on = [ aws_iam_role_policy_attachment.eks_cluster_AmazonEKSClusterPolicy ]
+      encryption_config {
+    resources = ["secrets"]
+
+    provider {
+      key_arn = aws_kms_key.eks_secrets.arn
+    }
+  }
+
+    depends_on = [ aws_iam_role_policy_attachment.eks_cluster_AmazonEKSClusterPolicy, aws_kms_key.eks_secrets ]
 
 }
 
@@ -128,6 +145,12 @@ locals {
 
     /etc/eks/bootstrap.sh ${aws_eks_cluster.this.name}
   EOF
+}
+
+resource "aws_kms_key" "eks_secrets" {
+  description             = "KMS key for EKS secrets encryption"
+  deletion_window_in_days = 7
+  enable_key_rotation     = true
 }
 
 resource "aws_launch_template" "this" {
