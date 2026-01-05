@@ -15,6 +15,7 @@ env:
 permissions:
   issues: write
   contents: read
+  pull-requests: write
 jobs:
   terraform-plan:
     name: Terraform Plan
@@ -79,7 +80,7 @@ jobs:
           run: terraform validate
 
         - name: Terraform plan
-          run: terraform plan -var-file="prod.tfvars" -out=tfplan
+          run: terraform plan -var-file="prod.tfvars" -out=tfplan -lock-timeout=10m
 
         - name: Upload the artifact to Github workspace
           uses: actions/upload-artifact@v4

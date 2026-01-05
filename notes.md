@@ -41,3 +41,6 @@
 | ImagePullBackOff             | ECR policy / NAT     |
 | No internet from pod         | NAT / route tables   |
 
+
+**How to remove the Terraform state lock from previous failed process/pipeline?**
+`terraform force-unlock f6c6da90-fbcc-7e65-d103-aef2d664a2d5`
