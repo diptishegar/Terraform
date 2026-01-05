@@ -51,7 +51,7 @@ jobs:
           shell: bash
           run: |
             set +x
-            echo "${{ secrets.PROD_TF_VARS_SECRETE }}" > prod.tfvars
+            echo "${{ secrets.PROD_TF_VARS_SECRET }}" | base64 -d > prod.tfvars
             set -x
 
         - run: terraform init -input=false
