@@ -59,7 +59,7 @@ module "aws_eks_cluster" {
 
 module "security_group_bastion_host" {
   source = "./modules/security/security_group"
-  name = "connect the public subnet to private via a bastion host"
+  name = "Bastion Host"
   vpc_id = module.rapidconnect_vpc.vpc_id
 
   ingress_rules = var.security_ingress
@@ -67,17 +67,23 @@ module "security_group_bastion_host" {
 
 module "security_group_bastion_eks_nodes" {
   source = "./modules/security/security_group"
-  name = "connect the public subnet to private via a bastion host"
+  name = "connect bastion to eks"
   vpc_id = module.rapidconnect_vpc.vpc_id
   ingress_sg_rules = [{
   from_port = 443
   to_port = 443
-  protocol = "-1"
+  protocol = "tcp"
   source_security_group_id = module.security_group_bastion_host.security_group_id
 }, {
 from_port = 10250
   to_port = 10250
-  protocol = "-1"
+  protocol = "tcp"
+  source_security_group_id = module.security_group_bastion_host.security_group_id
+},
+{
+from_port = 22
+  to_port = 22
+  protocol = "tcp"
   source_security_group_id = module.security_group_bastion_host.security_group_id
 }
 ]

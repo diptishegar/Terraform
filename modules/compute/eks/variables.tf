@@ -56,7 +56,7 @@ variable "scaling_config" {
   }
 }
 
-variable "node_group_ami" {
+variable "worker_nodes_ami" {
   type = string
   description = "AMI Type for the node group instances"
   default = "ami-02b8269d5e85954ef"

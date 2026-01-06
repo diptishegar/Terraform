@@ -42,12 +42,6 @@ resource "aws_iam_role" "eks_node_role" {
     }
 }
 
-resource "aws_iam_role_policy_attachment" "eks_node_AmazonEKSWorkerNodePolicy" {
-    for_each = toset(var.eks_node_group_policy_arns)
-    role     = aws_iam_role.eks_node_role.name
-    policy_arn = each.value
-}
-
 #IAM IRSA role for ASG
 data "aws_iam_policy_document" "cluster_autoscaler_policy" {
   statement {
@@ -83,19 +77,20 @@ resource "aws_eks_cluster" "this" {
     name = var.cluster_name
     version = var.eks_version_id
     bootstrap_self_managed_addons = var.is_bootstrap_self_managed_addons
+    role_arn = aws_iam_role.eks_cluster_role.arn
+
     access_config {
         authentication_mode = "API_AND_CONFIG_MAP" 
     }
 
-    role_arn = aws_iam_role.eks_cluster_role.arn
     vpc_config {
       subnet_ids = var.eks_subnet_ids
       security_group_ids = var.security_groups
-      endpoint_public_access = false
+      endpoint_public_access = true
       endpoint_private_access = true
     }
 
-      encryption_config {
+    encryption_config {
     resources = ["secrets"]
 
     provider {
@@ -103,7 +98,7 @@ resource "aws_eks_cluster" "this" {
     }
   }
 
-    depends_on = [ aws_iam_role_policy_attachment.eks_cluster_AmazonEKSClusterPolicy, aws_kms_key.eks_secrets ]
+    depends_on = [ aws_iam_role_policy_attachment.eks_cluster_AmazonEKSClusterPolicy]
 
 }
 
@@ -132,7 +127,7 @@ resource "aws_iam_openid_connect_provider" "eks" {
   depends_on = [ aws_eks_cluster.this ]
 }
 
-# EC2 instances configuration
+# Worker nodes instances configuration
 resource "aws_iam_instance_profile" "this" {
   name = "${var.cluster_name}-node-instance-profile"
   role = aws_iam_role.eks_node_role.name
@@ -144,9 +139,15 @@ locals {
     #!/bin/bash
     set -o xtrace
 
-    /etc/eks/bootstrap.sh ${aws_eks_cluster.this.name}
+    apt-get update -y
+    apt-get install -y awscli
+
+    /etc/eks/bootstrap.sh ${aws_eks_cluster.this.name} \
+      --apiserver-endpoint ${aws_eks_cluster.this.endpoint} \
+      --b64-cluster-ca ${aws_eks_cluster.this.certificate_authority[0].data}
   EOF
 }
+
 
 resource "aws_kms_key" "eks_secrets" {
   description             = "KMS key for EKS secrets encryption"
@@ -154,9 +155,10 @@ resource "aws_kms_key" "eks_secrets" {
   enable_key_rotation     = true
 }
 
+#My self-managed worker nodes template
 resource "aws_launch_template" "this" {
   name_prefix   = "${var.cluster_name}-lt"
-  image_id      = var.node_group_ami
+  image_id      = var.worker_nodes_ami
   instance_type = "t2.micro"
   vpc_security_group_ids = aws_eks_cluster.this.vpc_config[0].security_group_ids
 
@@ -169,41 +171,12 @@ resource "aws_launch_template" "this" {
   tag_specifications {
     resource_type = "instance"
     tags = {
-      Name        = "${var.cluster_name}-worker"
+      Name        = "${var.cluster_name}-worker-node"
     }
   }
-}
-
-
-#Create EKS Self-managed Node Groups
-resource "aws_eks_node_group" "this" {
-    cluster_name = var.cluster_name
-    node_group_name = var.node_group_name
-
-    subnet_ids = var.eks_subnet_ids
-    instance_types = var.instance_types
-
-    
-
-    scaling_config {
-    desired_size = var.scaling_config.desired_size
-    max_size     = var.scaling_config.max_size
-    min_size     = var.scaling_config.min_size
-    }
-
-    update_config {
-    max_unavailable = 1
+  metadata_options {
+    http_tokens = "required"
   }
-
-    labels = {
-      role = "worker"
-    }
-    node_role_arn = aws_iam_role.eks_node_role.arn
-    tags = {
-      Name = "node-group-${var.cluster_name}"
-    }
-
-    depends_on = [ aws_iam_role_policy_attachment.eks_node_AmazonEKSWorkerNodePolicy, aws_eks_cluster.this ]
 }
 
 #aws-auth configmap
@@ -230,7 +203,6 @@ resource "kubernetes_config_map_v1" "aws_auth" {
   }
 
   depends_on = [
-    aws_eks_node_group.this,
     aws_autoscaling_group.this
   ]
 }
